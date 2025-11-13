@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { StudentSet } from './models/StudentSet';
 import { Student } from './models/Student';
-import { Evaluation } from './models/Evaluation';
+import { Evaluation, EVALUATION_GOALS, Status } from './models/Evaluation';
 import { Classes } from './models/Classes';
 import { Class } from './models/Class';
 import * as fs from 'fs';
@@ -27,6 +27,44 @@ const ensureDataDirectory = (): void => {
     fs.mkdirSync(dataDir, { recursive: true });
   }
 };
+
+const calculateStudentStatus = (evaluations: Evaluation[]): Status => {
+  if (evaluations.length === 0) {
+    return Status.IN_PROGRESS;
+  }
+
+  let totalPoints = 0;
+
+  const totalGoals = EVALUATION_GOALS.length;
+  const evaluatedGoals = new Set<string>();
+
+  for(const evalObj of evaluations){
+    const grade = evalObj.getGrade();
+    evaluatedGoals.add(evalObj.getGoal());
+
+    if(grade === 'MA'){
+      totalPoints += 10;
+    }
+    else if(grade === 'MPA'){
+      totalPoints += 8;
+    }
+    else if(grade === 'MANA'){
+      totalPoints += 4.5;
+    }
+  }
+
+  const average = totalPoints / totalGoals;
+
+  if(average >= 7){
+    return Status.APPROVED;
+  }
+  else if(average < 3){
+    return Status.REJECTED;
+  }
+  else{
+    return Status.IN_PROGRESS;
+  }
+}
 
 const saveDataToFile = (): void => {
   try {
@@ -432,6 +470,50 @@ app.put('/api/classes/:classId/enrollments/:studentCPF/evaluation', (req: Reques
     res.json(enrollment.toJSON());
   } catch (error) {
     res.status(400).json({ error: (error as Error).message });
+  }
+});
+
+app.post('/api/classes/:classId/reports/approval-summary', (req: Request, res: Response) => {
+  try {
+    const { classId } = req.params;
+    
+    const classObj = classes.findClassById(classId);
+    if (!classObj) {
+      return res.status(404).json({ error: 'Class not found' });
+    }
+
+    const enrollments = classObj.getEnrollments();
+
+    const summary = {
+      [Status.APPROVED]: 0,
+      [Status.REJECTED]: 0,
+      [Status.IN_PROGRESS]: 0,
+      totalStudents: enrollments.length
+    };
+
+    const details = [];
+
+    for (const enrollment of enrollments) {
+      const evaluations = enrollment.getEvaluations();
+      
+      const studentStatus = calculateStudentStatus(evaluations);
+      
+      summary[studentStatus]++;
+      
+      details.push({
+        student: enrollment.getStudent().toJSON(),
+        status: studentStatus,
+        evaluations: evaluations.map(e => e.toJSON())
+      });
+    }
+
+    res.json({
+      summary,
+      details
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
   }
 });
 
