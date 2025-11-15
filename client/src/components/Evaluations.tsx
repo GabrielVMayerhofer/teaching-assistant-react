@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Class } from '../types/Class';
 import ClassService from '../services/ClassService';
 import EnrollmentService from '../services/EnrollmentService';
+import ClassReport from './Report';
 
 interface EvaluationsProps {
   onError: (errorMessage: string) => void;
@@ -141,57 +142,61 @@ const Evaluations: React.FC<EvaluationsProps> = ({ onError }) => {
       )}
 
       {selectedClass && selectedClass.enrollments.length > 0 && (
-        <div className="evaluation-table-container">
-          <h4>{selectedClass.topic} ({selectedClass.year}/{selectedClass.semester})</h4>
-          
-          <div className="evaluation-matrix">
-            <table className="evaluation-table">
-              <thead>
-                <tr>
-                  <th className="student-name-header">Student</th>
-                  {evaluationGoals.map(goal => (
-                    <th key={goal} className="goal-header">{goal}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {selectedClass.enrollments.map(enrollment => {
-                  const student = enrollment.student;
-                  
-                  // Create a map of evaluations for quick lookup
-                  const studentEvaluations = enrollment.evaluations.reduce((acc, evaluation) => {
-                    acc[evaluation.goal] = evaluation.grade;
-                    return acc;
-                  }, {} as {[goal: string]: string});
+        <>
+          <div className="evaluation-table-container">
+            <h4>{selectedClass.topic} ({selectedClass.year}/{selectedClass.semester})</h4>
+            
+            <div className="evaluation-matrix">
+              <table className="evaluation-table">
+                <thead>
+                  <tr>
+                    <th className="student-name-header">Student</th>
+                    {evaluationGoals.map(goal => (
+                      <th key={goal} className="goal-header">{goal}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedClass.enrollments.map(enrollment => {
+                    const student = enrollment.student;
+                    
+                    // Create a map of evaluations for quick lookup
+                    const studentEvaluations = enrollment.evaluations.reduce((acc, evaluation) => {
+                      acc[evaluation.goal] = evaluation.grade;
+                      return acc;
+                    }, {} as {[goal: string]: string});
 
-                  return (
-                    <tr key={student.cpf} className="student-row">
-                      <td className="student-name-cell">{student.name}</td>
-                      {evaluationGoals.map(goal => {
-                        const currentGrade = studentEvaluations[goal] || '';
-                        
-                        return (
-                          <td key={goal} className="evaluation-cell">
-                            <select
-                              value={currentGrade}
-                              onChange={(e) => handleEvaluationChange(student.cpf, goal, e.target.value)}
-                              className={`evaluation-select ${currentGrade ? `grade-${currentGrade.toLowerCase()}` : ''}`}
-                            >
-                              <option value="">-</option>
-                              <option value="MANA">MANA</option>
-                              <option value="MPA">MPA</option>
-                              <option value="MA">MA</option>
-                            </select>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                    return (
+                      <tr key={student.cpf} className="student-row">
+                        <td className="student-name-cell">{student.name}</td>
+                        {evaluationGoals.map(goal => {
+                          const currentGrade = studentEvaluations[goal] || '';
+                          
+                          return (
+                            <td key={goal} className="evaluation-cell">
+                              <select
+                                value={currentGrade}
+                                onChange={(e) => handleEvaluationChange(student.cpf, goal, e.target.value)}
+                                className={`evaluation-select ${currentGrade ? `grade-${currentGrade.toLowerCase()}` : ''}`}
+                              >
+                                <option value="">-</option>
+                                <option value="MANA">MANA</option>
+                                <option value="MPA">MPA</option>
+                                <option value="MA">MA</option>
+                              </select>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+          <ClassReport classId={selectedClass.id} />
+        </>
+
       )}
     </div>
   );

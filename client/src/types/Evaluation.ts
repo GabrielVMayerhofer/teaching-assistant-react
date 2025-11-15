@@ -1,4 +1,4 @@
-export type Grade = 'MANA' | 'MPA' | 'MA';
+export type Grade = "MANA" | "MPA" | "MA";
 
 export interface Evaluation {
   goal: string;
@@ -7,12 +7,18 @@ export interface Evaluation {
 
 // Predefined evaluation goals
 export const EVALUATION_GOALS = [
-  'Requirements',
-  'Configuration Management', 
-  'Project Management',
-  'Design',
-  'Tests',
-  'Refactoring'
+  "Requirements",
+  "Configuration Management",
+  "Project Management",
+  "Design",
+  "Tests",
+  "Refactoring",
 ] as const;
 
-export type EvaluationGoal = typeof EVALUATION_GOALS[number];
+export type EvaluationGoal = (typeof EVALUATION_GOALS)[number];
+
+export enum Status {
+  APPROVED = "APPROVED",
+  REJECTED = "REJECTED",
+  IN_PROGRESS = "IN PROGRESS",
+}

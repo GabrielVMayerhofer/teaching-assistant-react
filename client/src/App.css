@@ -753,7 +753,7 @@ tbody tr:last-child td {
 }
 
 /* Update enroll button in table */
-.enroll-btn {
+.enroll-btn, .report-btn {
   background-color: #3b82f6;
   color: white;
   border: none;
@@ -1192,4 +1192,67 @@ tbody tr:last-child td {
 .evaluation-select option[value="MANA"] {
   background-color: #fecaca;
   color: #991b1b;
+}
+
+.report-header{
+  background-color: #f8f9fa; 
+  color: #333;
+  padding: 12px 8px;
+  text-align: center;
+  font-weight: 600; 
+  font-size: 1.1rem;
+  border: 1px solid #ddd; 
+  width: calc((100% - 200px) / 6); 
+  vertical-align: middle;
+  line-height: 1.2;
+}
+
+.report-cells{
+  background-color: #fff; 
+  padding: 12px 8px;
+  border: 1px solid #ddd; 
+  vertical-align: middle; 
+  font-size: 0.9rem;
+  line-height: 1.3;
+  text-align: left; 
+}
+
+.report-results {
+  margin-top: 24px; 
+  padding: 16px;
+  background-color: #f9f9f9; 
+  border-radius: 8px;
+  border: 1px solid #eee;
+}
+
+.report-results h4{
+  margin-top: 12px;
+  margin-bottom: 12px;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.report-results hr {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.report-results ul {
+  list-style-type: none; 
+  padding-left: 0;
+  margin-bottom: 16px; 
+}
+
+.report-results li {
+  font-size: 0.9rem;
+  color: #555;
+  margin-bottom: 8px; 
+}
+
+.report-results li strong {
+  color: #222;
+  min-width: 120px; 
+  display: inline-block;
 }

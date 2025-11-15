@@ -1,4 +1,5 @@
 import { Class } from '../types/Class';
+import { ApprovalSummaryReportResponse } from '../types/Report';
 
 const API_BASE_URL = 'http://localhost:3005';
 
@@ -75,6 +76,29 @@ class ClassService {
       }
     } catch (error) {
       console.error('Error deleting class:', error);
+      throw error;
+    }
+  }
+  
+  static async generateApprovalSummaryReport(classId: string): Promise<ApprovalSummaryReportResponse> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/classes/${classId}/reports/approval-summary`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate report');
+      }
+
+      const data: ApprovalSummaryReportResponse = await response.json();
+      return data;
+
+    } catch (error) {
+      console.error('Error generating approval report:', error);
       throw error;
     }
   }
