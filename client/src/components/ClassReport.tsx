@@ -12,14 +12,60 @@ interface ClassReportProps {
 
 type FilterOption = 'ALL' | 'APPROVED' | 'BELOW_AVG' | 'BELOW_X';
 
-// ClassReport component - displays a modal with class report statistics.
+const GRADE_THRESHOLDS = {
+  HIGH: 7.0,
+  MEDIUM: 4.0
+};
+
+const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
+  'APPROVED': { label: 'Approved', className: 'status-approved' },
+  'APPROVED_FINAL': { label: 'Approved (Final)', className: 'status-approved-final' },
+  'FAILED': { label: 'Failed', className: 'status-failed' },
+  'FAILED_BY_ABSENCE': { label: 'Failed (Absence)', className: 'status-failed-absence' }, // Classe corrigida
+  'PENDING': { label: 'Pending', className: 'status-pending' }
+};
+
+const getStatusInfo = (status: string) => {
+  return STATUS_CONFIG[status] || { label: status, className: '' };
+};
+
+
+interface FilterContext {
+  average: number | null;
+  threshold: number;
+}
+
+const shouldShowStudent = (student: any, filterType: FilterOption, context: FilterContext): boolean => {
+  const grade = student.finalGrade ?? 0;
+  const isPending = student.status === 'PENDING';
+
+  switch (filterType) {
+    case 'ALL':
+      return true;
+    
+    case 'APPROVED':
+      return ['APPROVED', 'APPROVED_FINAL'].includes(student.status);
+    
+    case 'BELOW_AVG':
+      if (context.average === null || isPending) return false;
+      return grade < context.average;
+    
+    case 'BELOW_X':
+      if (isPending) return false;
+      return grade < context.threshold;
+      
+    default:
+      return true;
+  }
+};
+
 const ClassReport: React.FC<ClassReportProps> = ({ classObj, onClose, onError }) => {
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Filter state
   const [filterType, setFilterType] = useState<FilterOption>('ALL');
-  const [customThreshold, setCustomThreshold] = useState<number>(7.0);
+  const [customThreshold, setCustomThreshold] = useState<number>(GRADE_THRESHOLDS.HIGH);
 
   useEffect(() => {
     const loadReport = async () => {
@@ -41,51 +87,15 @@ const ClassReport: React.FC<ClassReportProps> = ({ classObj, onClose, onError })
   const filteredStudents = useMemo(() => {
     if (!reportData || !reportData.students) return [];
 
-    return reportData.students.filter(student => {
-      const grade = student.finalGrade ?? 0;
-      const isPending = student.status === 'PENDING';
-
-      switch (filterType) {
-        case 'ALL':
-          return true;
-        
-        case 'APPROVED':
-          return student.status === 'APPROVED' || student.status === 'APPROVED_FINAL';
-        
-        case 'BELOW_AVG':
-          return reportData.studentsAverage !== null && grade < reportData.studentsAverage && !isPending;
-        
-        case 'BELOW_X':
-          if (isPending) return false;
-          return grade < customThreshold;
-          
-        default:
-          return true;
-      }
-    });
+    return reportData.students.filter(student => 
+      shouldShowStudent(student, filterType, {
+        average: reportData.studentsAverage,
+        threshold: customThreshold
+      })
+    );
   }, [reportData, filterType, customThreshold]);
 
-  const getGradeClass = (grade: number | null) => {
-    if (grade === null) return '';
-    if (grade >= 7.0) return 'grade-high';
-    if (grade >= 4.0) return 'grade-medium';
-    return 'grade-low';
-  };
-
-  const getStatusConfig = (status: string) => {
-    switch (status) {
-      case 'APPROVED':
-        return { label: 'Aprovado', className: 'status-approved' };
-      case 'APPROVED_FINAL':
-        return { label: 'Aprovado (Final)', className: 'status-approved-final' };
-      case 'FAILED':
-        return { label: 'Reprovado', className: 'status-failed' };
-      default:
-        return { label: status, className: '' };
-    }
-  };
-
-return (
+  return (
     <div className="enrollment-overlay" data-testid="report-overlay">
       <div className="report-modal" data-testid="report-modal">
         <div className="enrollment-modal-header">
@@ -256,22 +266,26 @@ return (
                     </thead>
                     <tbody data-testid="students-table-body">
                       {filteredStudents.length > 0 ? (
-                        filteredStudents.map((student) => (
-                          <tr key={student.studentId} data-testid={`student-row-${student.studentId}`}>
-                            <td data-testid="student-name"><strong>{student.name}</strong></td>
-                            
-                            <td style={{ color: '#666' }} data-testid="student-cpf">{student.studentId}</td>
-                            <td data-testid="student-grade">
-                              {student.finalGrade !== null ? student.finalGrade.toFixed(2) : '–'}
-                            </td>
-                            <td 
-                              className={`status-${student.status.toLowerCase().replace(/_/g, '-')}`}
-                              data-testid={`status-indicator-${student.status.toLowerCase().replace(/_/g, '-')}`}
-                            >
-                              {typeof formatStatus === 'function' ? formatStatus(student.status) : student.status}
-                            </td>
-                          </tr>
-                        ))
+                        filteredStudents.map((student) => {
+                          const statusInfo = getStatusInfo(student.status);
+                          
+                          return (
+                            <tr key={student.studentId} data-testid={`student-row-${student.studentId}`}>
+                              <td data-testid="student-name"><strong>{student.name}</strong></td>
+                              
+                              <td style={{ color: '#666' }} data-testid="student-cpf">{student.studentId}</td>
+                              <td data-testid="student-grade">
+                                {student.finalGrade !== null ? student.finalGrade.toFixed(2) : '–'}
+                              </td>
+                              <td 
+                                className={statusInfo.className}
+                                data-testid={`status-indicator-${student.status}`}
+                              >
+                                {statusInfo.label}
+                              </td>
+                            </tr>
+                          );
+                        })
                       ) : (
                         <tr className="empty-state-row" data-testid="empty-state-row">
                           <td colSpan={4} data-testid="no-students-message">
